@@ -1,2 +1,2 @@
 # nodegoat
-nodegoat
+nodegoat test
