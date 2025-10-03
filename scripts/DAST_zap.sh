@@ -46,3 +46,4 @@ fi
 
 just _info "No vulnerabilities found! You are allowed to commit!"
 exit 0
+
