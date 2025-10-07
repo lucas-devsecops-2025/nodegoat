@@ -1,0 +1,60 @@
+# Workflow name displayed in GitHub Actions UI
+name: 00-debug
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# Cancel previous runs if a new commit is pushed to the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}  # Group by workflow and ref (branch/PR)
+  cancel-in-progress: true  # Cancel previous runs in the same group
+
+jobs:
+  debug:
+    # Dynamic job name based on matrix value
+    name: Debug - ${{ matrix.test }}
+
+    # Self-hosted runner (ARC - Actions Runner Controller)
+    runs-on: [arc-runner-set]
+
+    # Minimum required permissions (least privilege principle)
+    # See: https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+    # See: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions
+    permissions:
+      contents: read  # Permission to read repository code
+
+    # Matrix strategy: runs the same job with different parameters in parallel
+    strategy:
+      matrix:
+        test: [connectivity, docker-dind]  # Creates 2 jobs: one for each value
+
+    steps:
+      # Checkout repository code
+      - name: Checkout Code
+        uses: actions/checkout@v5  # Official GitHub action for checkout
+
+      # Conditional step: only runs when matrix.test == 'connectivity'
+      - name: Test Runner Connectivity
+        if: matrix.test == 'connectivity'  # Condition: only runs in this matrix job
+        run: |
+          echo "Runner is connected!"
+          echo "OS: $(uname -a)"
+          echo "Working directory: $(pwd)"
+          ls -la
+
+      # Conditional step: only runs when matrix.test == 'docker-dind'
+      - name: Test Docker DinD (Docker-in-Docker)
+        if: matrix.test == 'docker-dind'  # Condition: only runs in this matrix job
+        run: |
+          echo "Testing Docker availability..."
+          docker --version
+          echo "Testing Docker daemon..."
+          docker info
+          echo "Running test container..."
+          docker run --rm hello-world
+          echo "Listing running containers..."
+          docker ps
+          echo "Docker DinD is working!"
